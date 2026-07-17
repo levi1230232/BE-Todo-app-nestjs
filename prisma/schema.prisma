@@ -1,0 +1,213 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum TeamMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  OVERDUE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum WorkspaceStyle {
+  TEAM
+  PERSONAL
+}
+
+enum NotificationType {
+  DEADLINE
+  ASSIGNED
+  COMMENT
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  password     String
+  role         UserRole
+  refreshToken String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  categories    Category[]
+  createdTasks  Task[]            @relation("TaskCreator")
+  assignedTasks Task[]            @relation("TaskAssignee")
+  comments      Comment[]
+  notifications Notification[]
+  teamMembers   TeamMember[]
+  ownedTeams    Team[]            @relation("TeamOwner")
+  tags          Tag[]
+  reminderLogs  TaskReminderLog[]
+
+  @@map("users")
+}
+
+model Team {
+  id          Int     @id @default(autoincrement())
+  name        String 
+  description String?
+  ownerId     Int     @map("owner_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  owner   User         @relation("TeamOwner", fields: [ownerId], references: [id])
+  members TeamMember[]
+  tasks   Task[]
+  tags    Tag[]
+  @@unique([name, ownerId])
+  @@map("team")
+}
+
+model TeamMember {
+  id     Int            @id @default(autoincrement())
+  userId Int            @map("user_id")
+  teamId Int            @map("team_id")
+  role   TeamMemberRole
+  joinAt DateTime       @default(now()) @map("join_at")
+
+  user User @relation(fields: [userId], references: [id])
+  team Team @relation(fields: [teamId], references: [id])
+
+  @@unique([userId, teamId])
+  @@map("team_member")
+}
+
+model Category {
+  id          Int    @id @default(autoincrement())
+  userId      Int    @map("user_id")
+  name        String
+  description String
+  color       String
+
+  user  User   @relation(fields: [userId], references: [id])
+  tasks Task[]
+
+  @@map("category")
+}
+
+model Tag {
+  id     Int    @id @default(autoincrement())
+  name   String
+  color String
+  userId Int?   @map("user_id")
+  teamId Int?   @map("team_id")
+
+  user User? @relation(fields: [userId], references: [id])
+  team Team? @relation(fields: [teamId], references: [id])
+
+  taskTags TaskTag[]
+
+  @@unique([userId, name])
+  @@unique([teamId, name])
+  @@map("tag")
+}
+
+model Task {
+  id             Int            @id @default(autoincrement())
+  title          String
+  description    String?
+  status         TaskStatus
+  priority       Priority
+  dueTo          DateTime       @map("due_to")
+  reminder       Int // Đã sửa từ 'remainder' -> 'reminder' cho đúng chính tả
+  workspaceStyle WorkspaceStyle @map("workspace_style")
+  teamId         Int?           @map("team_id")
+  categoryId     Int?           @map("category_id")
+  createBy       Int            @map("create_by")
+  assignedTo     Int            @map("assigned_to")
+
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  isSoftDelete Boolean  @default(false) @map("is_softdelete")
+
+  creator       User              @relation("TaskCreator", fields: [createBy], references: [id])
+  assignee      User              @relation("TaskAssignee", fields: [assignedTo], references: [id])
+  team          Team?             @relation(fields: [teamId], references: [id])
+  category      Category?         @relation(fields: [categoryId], references: [id])
+  comments      Comment[]
+  taskTags      TaskTag[]
+  notifications Notification[]
+  reminderLogs  TaskReminderLog[]
+
+  @@map("task")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  taskId    Int      @map("task_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("comment")
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int              @map("user_id")
+  taskId    Int?             @map("task_id")
+  title     String
+  content   String
+  type      NotificationType
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user User  @relation(fields: [userId], references: [id])
+  task Task? @relation(fields: [taskId], references: [id])
+
+  @@map("notification")
+}
+
+model TaskReminderLog {
+  id           Int              @id @default(autoincrement())
+  taskId       Int              @map("task_id")
+  userId       Int              @map("user_id")
+  reminderType NotificationType @map("reminder_type")
+  sentAt       DateTime         @default(now()) @map("sent_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([taskId, userId, reminderType])
+  @@map("task_reminder_log")
+}
+
+model TaskTag {
+  taskId Int @map("task_id")
+  tagId  Int @map("tag_id")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, tagId])
+  @@map("task_tag")
+}
