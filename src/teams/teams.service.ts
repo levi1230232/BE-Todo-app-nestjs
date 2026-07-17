@@ -261,6 +261,25 @@ export class TeamsService {
       this.logger.warn(`Attempt to remove owner from team ${teamId}`);
       throw new BadRequestException('Owner cannot be removed');
     }
+    const task = await this.prisma.task.findFirst({
+      where: {
+        teamId,
+        assignedTo: userId,
+      },
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    await this.prisma.task.update({
+      where: {
+        id: task.id,
+      },
+      data: {
+        assignedTo: null,
+      },
+    });
 
     await this.prisma.teamMember.delete({
       where: {
@@ -270,6 +289,57 @@ export class TeamsService {
     this.logger.log(`User ${userId} removed from team ${teamId}`);
     return {
       message: 'Removed member successfully',
+    };
+  }
+  async leaveTeam(userId: number, teamId: number) {
+    this.logger.log(`User ${userId} is leaving team ${teamId}`);
+
+    const member = await this.prisma.teamMember.findFirst({
+      where: {
+        userId,
+        teamId,
+      },
+    });
+
+    if (!member) {
+      this.logger.warn(`User ${userId} is not a member of team ${teamId}`);
+      throw new NotFoundException('You are not a member of this team');
+    }
+    if (member.role === 'OWNER') {
+      this.logger.warn(`Owner ${userId} attempted to leave team ${teamId}`);
+      throw new BadRequestException(
+        'Owner cannot leave the team. Transfer ownership or delete the team first.',
+      );
+    }
+    const task = await this.prisma.task.findFirst({
+      where: {
+        teamId,
+        assignedTo: userId,
+      },
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    await this.prisma.task.update({
+      where: {
+        id: task.id,
+      },
+      data: {
+        assignedTo: null,
+      },
+    });
+    await this.prisma.teamMember.delete({
+      where: {
+        id: member.id,
+      },
+    });
+
+    this.logger.log(`User ${userId} left team ${teamId}`);
+
+    return {
+      message: 'Left team successfully',
     };
   }
 }

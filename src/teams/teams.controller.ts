@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Req,
@@ -246,5 +247,28 @@ export class TeamsController {
     @Param('memberId') memberId: string,
   ) {
     return this.teamsService.removeMember(+memberId, +teamId, req.user.id);
+  }
+  @ApiOperation({ summary: 'Leave team' })
+  @ApiParam({
+    name: 'teamId',
+    example: 1,
+    description: 'ID of the team to leave',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Left team successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Team not found or you are not a member of this team',
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Owner cannot leave the team. Transfer ownership or delete the team first',
+  })
+  @Delete(':teamId/leave')
+  leaveTeam(@Param('teamId', ParseIntPipe) teamId: number, @Req() req) {
+    return this.teamsService.leaveTeam(req.user.id, teamId);
   }
 }

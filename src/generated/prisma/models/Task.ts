@@ -271,7 +271,7 @@ export type TaskGroupByOutputType = {
   teamId: number | null
   categoryId: number | null
   createBy: number
-  assignedTo: number
+  assignedTo: number | null
   createdAt: Date
   updatedAt: Date
   isSoftDelete: boolean
@@ -312,12 +312,12 @@ export type TaskWhereInput = {
   teamId?: Prisma.IntNullableFilter<"Task"> | number | null
   categoryId?: Prisma.IntNullableFilter<"Task"> | number | null
   createBy?: Prisma.IntFilter<"Task"> | number
-  assignedTo?: Prisma.IntFilter<"Task"> | number
+  assignedTo?: Prisma.IntNullableFilter<"Task"> | number | null
   createdAt?: Prisma.DateTimeFilter<"Task"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Task"> | Date | string
   isSoftDelete?: Prisma.BoolFilter<"Task"> | boolean
   creator?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  assignee?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  assignee?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   team?: Prisma.XOR<Prisma.TeamNullableScalarRelationFilter, Prisma.TeamWhereInput> | null
   category?: Prisma.XOR<Prisma.CategoryNullableScalarRelationFilter, Prisma.CategoryWhereInput> | null
   comments?: Prisma.CommentListRelationFilter
@@ -338,7 +338,7 @@ export type TaskOrderByWithRelationInput = {
   teamId?: Prisma.SortOrderInput | Prisma.SortOrder
   categoryId?: Prisma.SortOrderInput | Prisma.SortOrder
   createBy?: Prisma.SortOrder
-  assignedTo?: Prisma.SortOrder
+  assignedTo?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   isSoftDelete?: Prisma.SortOrder
@@ -367,12 +367,12 @@ export type TaskWhereUniqueInput = Prisma.AtLeast<{
   teamId?: Prisma.IntNullableFilter<"Task"> | number | null
   categoryId?: Prisma.IntNullableFilter<"Task"> | number | null
   createBy?: Prisma.IntFilter<"Task"> | number
-  assignedTo?: Prisma.IntFilter<"Task"> | number
+  assignedTo?: Prisma.IntNullableFilter<"Task"> | number | null
   createdAt?: Prisma.DateTimeFilter<"Task"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Task"> | Date | string
   isSoftDelete?: Prisma.BoolFilter<"Task"> | boolean
   creator?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  assignee?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  assignee?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   team?: Prisma.XOR<Prisma.TeamNullableScalarRelationFilter, Prisma.TeamWhereInput> | null
   category?: Prisma.XOR<Prisma.CategoryNullableScalarRelationFilter, Prisma.CategoryWhereInput> | null
   comments?: Prisma.CommentListRelationFilter
@@ -393,7 +393,7 @@ export type TaskOrderByWithAggregationInput = {
   teamId?: Prisma.SortOrderInput | Prisma.SortOrder
   categoryId?: Prisma.SortOrderInput | Prisma.SortOrder
   createBy?: Prisma.SortOrder
-  assignedTo?: Prisma.SortOrder
+  assignedTo?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   isSoftDelete?: Prisma.SortOrder
@@ -419,7 +419,7 @@ export type TaskScalarWhereWithAggregatesInput = {
   teamId?: Prisma.IntNullableWithAggregatesFilter<"Task"> | number | null
   categoryId?: Prisma.IntNullableWithAggregatesFilter<"Task"> | number | null
   createBy?: Prisma.IntWithAggregatesFilter<"Task"> | number
-  assignedTo?: Prisma.IntWithAggregatesFilter<"Task"> | number
+  assignedTo?: Prisma.IntNullableWithAggregatesFilter<"Task"> | number | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Task"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Task"> | Date | string
   isSoftDelete?: Prisma.BoolWithAggregatesFilter<"Task"> | boolean
@@ -437,7 +437,7 @@ export type TaskCreateInput = {
   updatedAt?: Date | string
   isSoftDelete?: boolean
   creator: Prisma.UserCreateNestedOneWithoutCreatedTasksInput
-  assignee: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
+  assignee?: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
   team?: Prisma.TeamCreateNestedOneWithoutTasksInput
   category?: Prisma.CategoryCreateNestedOneWithoutTasksInput
   comments?: Prisma.CommentCreateNestedManyWithoutTaskInput
@@ -458,7 +458,7 @@ export type TaskUncheckedCreateInput = {
   teamId?: number | null
   categoryId?: number | null
   createBy: number
-  assignedTo: number
+  assignedTo?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   isSoftDelete?: boolean
@@ -480,7 +480,7 @@ export type TaskUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creator?: Prisma.UserUpdateOneRequiredWithoutCreatedTasksNestedInput
-  assignee?: Prisma.UserUpdateOneRequiredWithoutAssignedTasksNestedInput
+  assignee?: Prisma.UserUpdateOneWithoutAssignedTasksNestedInput
   team?: Prisma.TeamUpdateOneWithoutTasksNestedInput
   category?: Prisma.CategoryUpdateOneWithoutTasksNestedInput
   comments?: Prisma.CommentUpdateManyWithoutTaskNestedInput
@@ -501,7 +501,7 @@ export type TaskUncheckedUpdateInput = {
   teamId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   categoryId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createBy?: Prisma.IntFieldUpdateOperationsInput | number
-  assignedTo?: Prisma.IntFieldUpdateOperationsInput | number
+  assignedTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -523,7 +523,7 @@ export type TaskCreateManyInput = {
   teamId?: number | null
   categoryId?: number | null
   createBy: number
-  assignedTo: number
+  assignedTo?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   isSoftDelete?: boolean
@@ -554,7 +554,7 @@ export type TaskUncheckedUpdateManyInput = {
   teamId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   categoryId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createBy?: Prisma.IntFieldUpdateOperationsInput | number
-  assignedTo?: Prisma.IntFieldUpdateOperationsInput | number
+  assignedTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -905,7 +905,7 @@ export type TaskCreateWithoutCreatorInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   isSoftDelete?: boolean
-  assignee: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
+  assignee?: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
   team?: Prisma.TeamCreateNestedOneWithoutTasksInput
   category?: Prisma.CategoryCreateNestedOneWithoutTasksInput
   comments?: Prisma.CommentCreateNestedManyWithoutTaskInput
@@ -925,7 +925,7 @@ export type TaskUncheckedCreateWithoutCreatorInput = {
   workspaceStyle: $Enums.WorkspaceStyle
   teamId?: number | null
   categoryId?: number | null
-  assignedTo: number
+  assignedTo?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   isSoftDelete?: boolean
@@ -1027,7 +1027,7 @@ export type TaskScalarWhereInput = {
   teamId?: Prisma.IntNullableFilter<"Task"> | number | null
   categoryId?: Prisma.IntNullableFilter<"Task"> | number | null
   createBy?: Prisma.IntFilter<"Task"> | number
-  assignedTo?: Prisma.IntFilter<"Task"> | number
+  assignedTo?: Prisma.IntNullableFilter<"Task"> | number | null
   createdAt?: Prisma.DateTimeFilter<"Task"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Task"> | Date | string
   isSoftDelete?: Prisma.BoolFilter<"Task"> | boolean
@@ -1061,7 +1061,7 @@ export type TaskCreateWithoutTeamInput = {
   updatedAt?: Date | string
   isSoftDelete?: boolean
   creator: Prisma.UserCreateNestedOneWithoutCreatedTasksInput
-  assignee: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
+  assignee?: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
   category?: Prisma.CategoryCreateNestedOneWithoutTasksInput
   comments?: Prisma.CommentCreateNestedManyWithoutTaskInput
   taskTags?: Prisma.TaskTagCreateNestedManyWithoutTaskInput
@@ -1080,7 +1080,7 @@ export type TaskUncheckedCreateWithoutTeamInput = {
   workspaceStyle: $Enums.WorkspaceStyle
   categoryId?: number | null
   createBy: number
-  assignedTo: number
+  assignedTo?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   isSoftDelete?: boolean
@@ -1128,7 +1128,7 @@ export type TaskCreateWithoutCategoryInput = {
   updatedAt?: Date | string
   isSoftDelete?: boolean
   creator: Prisma.UserCreateNestedOneWithoutCreatedTasksInput
-  assignee: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
+  assignee?: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
   team?: Prisma.TeamCreateNestedOneWithoutTasksInput
   comments?: Prisma.CommentCreateNestedManyWithoutTaskInput
   taskTags?: Prisma.TaskTagCreateNestedManyWithoutTaskInput
@@ -1147,7 +1147,7 @@ export type TaskUncheckedCreateWithoutCategoryInput = {
   workspaceStyle: $Enums.WorkspaceStyle
   teamId?: number | null
   createBy: number
-  assignedTo: number
+  assignedTo?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   isSoftDelete?: boolean
@@ -1195,7 +1195,7 @@ export type TaskCreateWithoutCommentsInput = {
   updatedAt?: Date | string
   isSoftDelete?: boolean
   creator: Prisma.UserCreateNestedOneWithoutCreatedTasksInput
-  assignee: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
+  assignee?: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
   team?: Prisma.TeamCreateNestedOneWithoutTasksInput
   category?: Prisma.CategoryCreateNestedOneWithoutTasksInput
   taskTags?: Prisma.TaskTagCreateNestedManyWithoutTaskInput
@@ -1215,7 +1215,7 @@ export type TaskUncheckedCreateWithoutCommentsInput = {
   teamId?: number | null
   categoryId?: number | null
   createBy: number
-  assignedTo: number
+  assignedTo?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   isSoftDelete?: boolean
@@ -1252,7 +1252,7 @@ export type TaskUpdateWithoutCommentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creator?: Prisma.UserUpdateOneRequiredWithoutCreatedTasksNestedInput
-  assignee?: Prisma.UserUpdateOneRequiredWithoutAssignedTasksNestedInput
+  assignee?: Prisma.UserUpdateOneWithoutAssignedTasksNestedInput
   team?: Prisma.TeamUpdateOneWithoutTasksNestedInput
   category?: Prisma.CategoryUpdateOneWithoutTasksNestedInput
   taskTags?: Prisma.TaskTagUpdateManyWithoutTaskNestedInput
@@ -1272,7 +1272,7 @@ export type TaskUncheckedUpdateWithoutCommentsInput = {
   teamId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   categoryId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createBy?: Prisma.IntFieldUpdateOperationsInput | number
-  assignedTo?: Prisma.IntFieldUpdateOperationsInput | number
+  assignedTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1293,7 +1293,7 @@ export type TaskCreateWithoutNotificationsInput = {
   updatedAt?: Date | string
   isSoftDelete?: boolean
   creator: Prisma.UserCreateNestedOneWithoutCreatedTasksInput
-  assignee: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
+  assignee?: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
   team?: Prisma.TeamCreateNestedOneWithoutTasksInput
   category?: Prisma.CategoryCreateNestedOneWithoutTasksInput
   comments?: Prisma.CommentCreateNestedManyWithoutTaskInput
@@ -1313,7 +1313,7 @@ export type TaskUncheckedCreateWithoutNotificationsInput = {
   teamId?: number | null
   categoryId?: number | null
   createBy: number
-  assignedTo: number
+  assignedTo?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   isSoftDelete?: boolean
@@ -1350,7 +1350,7 @@ export type TaskUpdateWithoutNotificationsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creator?: Prisma.UserUpdateOneRequiredWithoutCreatedTasksNestedInput
-  assignee?: Prisma.UserUpdateOneRequiredWithoutAssignedTasksNestedInput
+  assignee?: Prisma.UserUpdateOneWithoutAssignedTasksNestedInput
   team?: Prisma.TeamUpdateOneWithoutTasksNestedInput
   category?: Prisma.CategoryUpdateOneWithoutTasksNestedInput
   comments?: Prisma.CommentUpdateManyWithoutTaskNestedInput
@@ -1370,7 +1370,7 @@ export type TaskUncheckedUpdateWithoutNotificationsInput = {
   teamId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   categoryId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createBy?: Prisma.IntFieldUpdateOperationsInput | number
-  assignedTo?: Prisma.IntFieldUpdateOperationsInput | number
+  assignedTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1391,7 +1391,7 @@ export type TaskCreateWithoutReminderLogsInput = {
   updatedAt?: Date | string
   isSoftDelete?: boolean
   creator: Prisma.UserCreateNestedOneWithoutCreatedTasksInput
-  assignee: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
+  assignee?: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
   team?: Prisma.TeamCreateNestedOneWithoutTasksInput
   category?: Prisma.CategoryCreateNestedOneWithoutTasksInput
   comments?: Prisma.CommentCreateNestedManyWithoutTaskInput
@@ -1411,7 +1411,7 @@ export type TaskUncheckedCreateWithoutReminderLogsInput = {
   teamId?: number | null
   categoryId?: number | null
   createBy: number
-  assignedTo: number
+  assignedTo?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   isSoftDelete?: boolean
@@ -1448,7 +1448,7 @@ export type TaskUpdateWithoutReminderLogsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creator?: Prisma.UserUpdateOneRequiredWithoutCreatedTasksNestedInput
-  assignee?: Prisma.UserUpdateOneRequiredWithoutAssignedTasksNestedInput
+  assignee?: Prisma.UserUpdateOneWithoutAssignedTasksNestedInput
   team?: Prisma.TeamUpdateOneWithoutTasksNestedInput
   category?: Prisma.CategoryUpdateOneWithoutTasksNestedInput
   comments?: Prisma.CommentUpdateManyWithoutTaskNestedInput
@@ -1468,7 +1468,7 @@ export type TaskUncheckedUpdateWithoutReminderLogsInput = {
   teamId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   categoryId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createBy?: Prisma.IntFieldUpdateOperationsInput | number
-  assignedTo?: Prisma.IntFieldUpdateOperationsInput | number
+  assignedTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1489,7 +1489,7 @@ export type TaskCreateWithoutTaskTagsInput = {
   updatedAt?: Date | string
   isSoftDelete?: boolean
   creator: Prisma.UserCreateNestedOneWithoutCreatedTasksInput
-  assignee: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
+  assignee?: Prisma.UserCreateNestedOneWithoutAssignedTasksInput
   team?: Prisma.TeamCreateNestedOneWithoutTasksInput
   category?: Prisma.CategoryCreateNestedOneWithoutTasksInput
   comments?: Prisma.CommentCreateNestedManyWithoutTaskInput
@@ -1509,7 +1509,7 @@ export type TaskUncheckedCreateWithoutTaskTagsInput = {
   teamId?: number | null
   categoryId?: number | null
   createBy: number
-  assignedTo: number
+  assignedTo?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   isSoftDelete?: boolean
@@ -1546,7 +1546,7 @@ export type TaskUpdateWithoutTaskTagsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creator?: Prisma.UserUpdateOneRequiredWithoutCreatedTasksNestedInput
-  assignee?: Prisma.UserUpdateOneRequiredWithoutAssignedTasksNestedInput
+  assignee?: Prisma.UserUpdateOneWithoutAssignedTasksNestedInput
   team?: Prisma.TeamUpdateOneWithoutTasksNestedInput
   category?: Prisma.CategoryUpdateOneWithoutTasksNestedInput
   comments?: Prisma.CommentUpdateManyWithoutTaskNestedInput
@@ -1566,7 +1566,7 @@ export type TaskUncheckedUpdateWithoutTaskTagsInput = {
   teamId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   categoryId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createBy?: Prisma.IntFieldUpdateOperationsInput | number
-  assignedTo?: Prisma.IntFieldUpdateOperationsInput | number
+  assignedTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1586,7 +1586,7 @@ export type TaskCreateManyCreatorInput = {
   workspaceStyle: $Enums.WorkspaceStyle
   teamId?: number | null
   categoryId?: number | null
-  assignedTo: number
+  assignedTo?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   isSoftDelete?: boolean
@@ -1620,7 +1620,7 @@ export type TaskUpdateWithoutCreatorInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  assignee?: Prisma.UserUpdateOneRequiredWithoutAssignedTasksNestedInput
+  assignee?: Prisma.UserUpdateOneWithoutAssignedTasksNestedInput
   team?: Prisma.TeamUpdateOneWithoutTasksNestedInput
   category?: Prisma.CategoryUpdateOneWithoutTasksNestedInput
   comments?: Prisma.CommentUpdateManyWithoutTaskNestedInput
@@ -1640,7 +1640,7 @@ export type TaskUncheckedUpdateWithoutCreatorInput = {
   workspaceStyle?: Prisma.EnumWorkspaceStyleFieldUpdateOperationsInput | $Enums.WorkspaceStyle
   teamId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   categoryId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  assignedTo?: Prisma.IntFieldUpdateOperationsInput | number
+  assignedTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1661,7 +1661,7 @@ export type TaskUncheckedUpdateManyWithoutCreatorInput = {
   workspaceStyle?: Prisma.EnumWorkspaceStyleFieldUpdateOperationsInput | $Enums.WorkspaceStyle
   teamId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   categoryId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  assignedTo?: Prisma.IntFieldUpdateOperationsInput | number
+  assignedTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1736,7 +1736,7 @@ export type TaskCreateManyTeamInput = {
   workspaceStyle: $Enums.WorkspaceStyle
   categoryId?: number | null
   createBy: number
-  assignedTo: number
+  assignedTo?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   isSoftDelete?: boolean
@@ -1754,7 +1754,7 @@ export type TaskUpdateWithoutTeamInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creator?: Prisma.UserUpdateOneRequiredWithoutCreatedTasksNestedInput
-  assignee?: Prisma.UserUpdateOneRequiredWithoutAssignedTasksNestedInput
+  assignee?: Prisma.UserUpdateOneWithoutAssignedTasksNestedInput
   category?: Prisma.CategoryUpdateOneWithoutTasksNestedInput
   comments?: Prisma.CommentUpdateManyWithoutTaskNestedInput
   taskTags?: Prisma.TaskTagUpdateManyWithoutTaskNestedInput
@@ -1773,7 +1773,7 @@ export type TaskUncheckedUpdateWithoutTeamInput = {
   workspaceStyle?: Prisma.EnumWorkspaceStyleFieldUpdateOperationsInput | $Enums.WorkspaceStyle
   categoryId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createBy?: Prisma.IntFieldUpdateOperationsInput | number
-  assignedTo?: Prisma.IntFieldUpdateOperationsInput | number
+  assignedTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1794,7 +1794,7 @@ export type TaskUncheckedUpdateManyWithoutTeamInput = {
   workspaceStyle?: Prisma.EnumWorkspaceStyleFieldUpdateOperationsInput | $Enums.WorkspaceStyle
   categoryId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createBy?: Prisma.IntFieldUpdateOperationsInput | number
-  assignedTo?: Prisma.IntFieldUpdateOperationsInput | number
+  assignedTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1811,7 +1811,7 @@ export type TaskCreateManyCategoryInput = {
   workspaceStyle: $Enums.WorkspaceStyle
   teamId?: number | null
   createBy: number
-  assignedTo: number
+  assignedTo?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   isSoftDelete?: boolean
@@ -1829,7 +1829,7 @@ export type TaskUpdateWithoutCategoryInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creator?: Prisma.UserUpdateOneRequiredWithoutCreatedTasksNestedInput
-  assignee?: Prisma.UserUpdateOneRequiredWithoutAssignedTasksNestedInput
+  assignee?: Prisma.UserUpdateOneWithoutAssignedTasksNestedInput
   team?: Prisma.TeamUpdateOneWithoutTasksNestedInput
   comments?: Prisma.CommentUpdateManyWithoutTaskNestedInput
   taskTags?: Prisma.TaskTagUpdateManyWithoutTaskNestedInput
@@ -1848,7 +1848,7 @@ export type TaskUncheckedUpdateWithoutCategoryInput = {
   workspaceStyle?: Prisma.EnumWorkspaceStyleFieldUpdateOperationsInput | $Enums.WorkspaceStyle
   teamId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createBy?: Prisma.IntFieldUpdateOperationsInput | number
-  assignedTo?: Prisma.IntFieldUpdateOperationsInput | number
+  assignedTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1869,7 +1869,7 @@ export type TaskUncheckedUpdateManyWithoutCategoryInput = {
   workspaceStyle?: Prisma.EnumWorkspaceStyleFieldUpdateOperationsInput | $Enums.WorkspaceStyle
   teamId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createBy?: Prisma.IntFieldUpdateOperationsInput | number
-  assignedTo?: Prisma.IntFieldUpdateOperationsInput | number
+  assignedTo?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   isSoftDelete?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1950,7 +1950,7 @@ export type TaskSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   updatedAt?: boolean
   isSoftDelete?: boolean
   creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  assignee?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  assignee?: boolean | Prisma.Task$assigneeArgs<ExtArgs>
   team?: boolean | Prisma.Task$teamArgs<ExtArgs>
   category?: boolean | Prisma.Task$categoryArgs<ExtArgs>
   comments?: boolean | Prisma.Task$commentsArgs<ExtArgs>
@@ -1977,7 +1977,7 @@ export type TaskSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   updatedAt?: boolean
   isSoftDelete?: boolean
   creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  assignee?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  assignee?: boolean | Prisma.Task$assigneeArgs<ExtArgs>
   team?: boolean | Prisma.Task$teamArgs<ExtArgs>
   category?: boolean | Prisma.Task$categoryArgs<ExtArgs>
 }, ExtArgs["result"]["task"]>
@@ -1999,7 +1999,7 @@ export type TaskSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   updatedAt?: boolean
   isSoftDelete?: boolean
   creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  assignee?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  assignee?: boolean | Prisma.Task$assigneeArgs<ExtArgs>
   team?: boolean | Prisma.Task$teamArgs<ExtArgs>
   category?: boolean | Prisma.Task$categoryArgs<ExtArgs>
 }, ExtArgs["result"]["task"]>
@@ -2025,7 +2025,7 @@ export type TaskSelectScalar = {
 export type TaskOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "status" | "priority" | "dueTo" | "reminder" | "workspaceStyle" | "teamId" | "categoryId" | "createBy" | "assignedTo" | "createdAt" | "updatedAt" | "isSoftDelete", ExtArgs["result"]["task"]>
 export type TaskInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  assignee?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  assignee?: boolean | Prisma.Task$assigneeArgs<ExtArgs>
   team?: boolean | Prisma.Task$teamArgs<ExtArgs>
   category?: boolean | Prisma.Task$categoryArgs<ExtArgs>
   comments?: boolean | Prisma.Task$commentsArgs<ExtArgs>
@@ -2036,13 +2036,13 @@ export type TaskInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
 }
 export type TaskIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  assignee?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  assignee?: boolean | Prisma.Task$assigneeArgs<ExtArgs>
   team?: boolean | Prisma.Task$teamArgs<ExtArgs>
   category?: boolean | Prisma.Task$categoryArgs<ExtArgs>
 }
 export type TaskIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  assignee?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  assignee?: boolean | Prisma.Task$assigneeArgs<ExtArgs>
   team?: boolean | Prisma.Task$teamArgs<ExtArgs>
   category?: boolean | Prisma.Task$categoryArgs<ExtArgs>
 }
@@ -2051,7 +2051,7 @@ export type $TaskPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name: "Task"
   objects: {
     creator: Prisma.$UserPayload<ExtArgs>
-    assignee: Prisma.$UserPayload<ExtArgs>
+    assignee: Prisma.$UserPayload<ExtArgs> | null
     team: Prisma.$TeamPayload<ExtArgs> | null
     category: Prisma.$CategoryPayload<ExtArgs> | null
     comments: Prisma.$CommentPayload<ExtArgs>[]
@@ -2071,7 +2071,7 @@ export type $TaskPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     teamId: number | null
     categoryId: number | null
     createBy: number
-    assignedTo: number
+    assignedTo: number | null
     createdAt: Date
     updatedAt: Date
     isSoftDelete: boolean
@@ -2470,7 +2470,7 @@ readonly fields: TaskFieldRefs;
 export interface Prisma__TaskClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   creator<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  assignee<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  assignee<T extends Prisma.Task$assigneeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Task$assigneeArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   team<T extends Prisma.Task$teamArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Task$teamArgs<ExtArgs>>): Prisma.Prisma__TeamClient<runtime.Types.Result.GetResult<Prisma.$TeamPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   category<T extends Prisma.Task$categoryArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Task$categoryArgs<ExtArgs>>): Prisma.Prisma__CategoryClient<runtime.Types.Result.GetResult<Prisma.$CategoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   comments<T extends Prisma.Task$commentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Task$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -2919,6 +2919,25 @@ export type TaskDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Limit how many Tasks to delete.
    */
   limit?: number
+}
+
+/**
+ * Task.assignee
+ */
+export type Task$assigneeArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
 }
 
 /**

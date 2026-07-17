@@ -140,14 +140,14 @@ model Task {
   teamId         Int?           @map("team_id")
   categoryId     Int?           @map("category_id")
   createBy       Int            @map("create_by")
-  assignedTo     Int            @map("assigned_to")
+  assignedTo     Int?            @map("assigned_to")
 
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
   isSoftDelete Boolean  @default(false) @map("is_softdelete")
 
   creator       User              @relation("TaskCreator", fields: [createBy], references: [id])
-  assignee      User              @relation("TaskAssignee", fields: [assignedTo], references: [id])
+  assignee      User?              @relation("TaskAssignee", fields: [assignedTo], references: [id])
   team          Team?             @relation(fields: [teamId], references: [id])
   category      Category?         @relation(fields: [categoryId], references: [id])
   comments      Comment[]
