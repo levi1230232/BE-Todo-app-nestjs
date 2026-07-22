@@ -44,7 +44,7 @@ export class CategoryService {
     this.logger.log(
       `Category created successfully. CategoryId=${category.id}, UserId=${userId}`,
     );
-    return category;
+    return { message: 'Category created successfully' };
   }
 
   async findAll(userId: number) {
@@ -104,7 +104,7 @@ export class CategoryService {
       data: dto,
     });
     this.logger.log(`Category ${id} updated successfully`);
-    return category;
+    return { message: 'Category updated successfully' };
   }
 
   async remove(userId: number, id: number) {

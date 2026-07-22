@@ -156,11 +156,12 @@ export class NotificationService {
     this.logger.log(`User ${userId} deleted notification ${id}`);
     await this.findOne(id, userId);
 
-    return this.prisma.notification.delete({
+    await this.prisma.notification.delete({
       where: {
         id,
       },
     });
+    return { message: 'Notification deleted successfully' };
   }
 
   async removeAll(userId: number) {
@@ -180,6 +181,7 @@ export class NotificationService {
     userId: number,
     taskTitle: string,
     teamName: string,
+    taskId: number,
   ) {
     this.logger.log(
       `Sending ASSIGNED notification to user ${userId} for task "${taskTitle}"`,
@@ -189,6 +191,7 @@ export class NotificationService {
       title: 'New Task Assigned',
       content: `You have been assigned task "${taskTitle}" in ${teamName}`,
       type: NotificationType.ASSIGNED,
+      taskId,
     });
   }
 
@@ -197,6 +200,7 @@ export class NotificationService {
     taskTitle: string,
     commenter: string,
     teamName: string,
+    taskId: number,
   ) {
     this.logger.log(
       `Sending COMMENT notification to user ${userId} for task "${taskTitle}"`,
@@ -206,6 +210,7 @@ export class NotificationService {
       title: 'New Comment',
       content: `${commenter} commented on "${taskTitle}" in ${teamName}`,
       type: NotificationType.COMMENT,
+      taskId,
     });
   }
 
@@ -245,5 +250,67 @@ export class NotificationService {
         type: NotificationType.DEADLINE,
       });
     }
+  }
+  async notifyChangeStatus(
+    actorId: number,
+    taskId: number,
+    oldStatus: string,
+    newStatus: string,
+  ) {
+    this.logger.log(
+      `Processing status change notification for task ${taskId}, actor ${actorId}`,
+    );
+
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      include: {
+        team: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!task) {
+      this.logger.warn(`Task ${taskId} not found`);
+      return;
+    }
+
+    const members = await this.prisma.teamMember.findMany({
+      where: {
+        teamId: task.team.id,
+        userId: {
+          not: actorId,
+        },
+      },
+      select: {
+        userId: true,
+      },
+    });
+
+    if (!members.length) {
+      this.logger.debug(`No members to notify for task ${taskId}`);
+      return;
+    }
+
+    this.logger.debug(
+      `Sending status change notification to ${members.length} members`,
+    );
+
+    await Promise.all(
+      members.map((member) =>
+        this.create({
+          userId: member.userId,
+          taskId,
+          title: 'Task Status Updated',
+          content: task.team
+            ? `Task "${task.title}" in team "${task.team.name}" changed status from "${oldStatus}" to "${newStatus}".`
+            : `Task "${task.title}" changed status from "${oldStatus}" to "${newStatus}".`,
+          type: NotificationType.STATUS_CHANGED,
+        }),
+      ),
+    );
   }
 }

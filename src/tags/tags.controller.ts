@@ -64,6 +64,9 @@ export class TagsController {
   findPersonal(@Req() req) {
     return this.tagsService.findAllPersonal(req.user.id);
   }
+  @ApiOperation({
+    summary: 'Get the list of tags for a team',
+  })
   @ApiParam({
     name: 'teamId',
     type: Number,

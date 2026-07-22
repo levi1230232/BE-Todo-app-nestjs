@@ -56,21 +56,14 @@ export class UsersService {
     this.logger.log(`Updating user. UserId=${id}`);
     await this.findOne(id);
 
-    const user = await this.prisma.user.update({
+    await this.prisma.user.update({
       where: {
         id,
       },
       data: dto,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        updatedAt: true,
-      },
     });
     this.logger.log(`User updated successfully. UserId=${id}`);
-    return user;
+    return { message: 'User updated successfully' };
   }
   async remove(id: number) {
     this.logger.log(`Deleting user. UserId=${id}`);
@@ -78,15 +71,16 @@ export class UsersService {
     if (user.role === 'ADMIN') {
       throw new ForbiddenException('You cannot delete admin account');
     }
-    await this.prisma.user.delete({
+    await this.prisma.user.update({
       where: {
         id,
       },
+      data: { isDelete: true },
     });
     this.logger.log(`User deleted successfully. UserId=${id}`);
 
     return {
-      message: 'Deleted successfully',
+      message: 'User deleted successfully',
     };
   }
 

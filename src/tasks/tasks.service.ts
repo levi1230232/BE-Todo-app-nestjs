@@ -169,10 +169,11 @@ export class TasksService {
         dto.assignedTo,
         task.title,
         teamName!,
+        task.id,
       );
     }
     this.logger.log(`Task ${task.id} created successfully by user ${userId}`);
-    return task;
+    return { message: 'Task created successfully' };
   }
 
   async findAll(query: QueryTaskDto) {
@@ -264,17 +265,42 @@ export class TasksService {
       },
     };
   }
-  async findOne(id: number) {
+  async findOne(id: number, userId: number) {
     const task = await this.prisma.task.findUnique({
       where: { id },
       include: {
-        creator: { select: { id: true, name: true, email: true } },
-        assignee: { select: { id: true, name: true, email: true } },
-        category: { select: { id: true, name: true } },
-        taskTags: {
-          select: { tag: { select: { id: true, name: true, color: true } } },
+        creator: {
+          select: { id: true, name: true, email: true },
         },
-        team: true,
+        assignee: {
+          select: { id: true, name: true, email: true },
+        },
+        category: {
+          select: { id: true, name: true },
+        },
+        taskTags: {
+          select: {
+            tag: {
+              select: {
+                id: true,
+                name: true,
+                color: true,
+              },
+            },
+          },
+        },
+        team: {
+          include: {
+            members: {
+              where: {
+                userId,
+              },
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -282,13 +308,46 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    return task;
+    // Task thuộc team
+    if (task.teamId) {
+      const isMember = task.team?.members.length > 0;
+
+      if (!isMember) {
+        throw new ForbiddenException(
+          'You do not have permission to view this task',
+        );
+      }
+    } else {
+      // Task cá nhân
+      if (task.assignedTo !== userId) {
+        throw new ForbiddenException(
+          'You do not have permission to view this task',
+        );
+      }
+    }
+
+    // bỏ members trước khi trả về
+    const { team, ...rest } = task;
+
+    return {
+      ...rest,
+      team: team
+        ? {
+            id: team.id,
+            name: team.name,
+            description: team.description,
+            ownerId: team.ownerId,
+            createdAt: team.createdAt,
+            updatedAt: team.updatedAt,
+          }
+        : null,
+    };
   }
 
   async update(id: number, dto: UpdateTaskDto, userId: number) {
     this.logger.log(`User ${userId} updating task ${id}`);
 
-    const task = await this.findOne(id);
+    const task = await this.findOne(id, userId);
 
     await this.checkTaskPermission(task, userId);
 
@@ -347,7 +406,7 @@ export class TasksService {
       data: dto,
     });
     this.logger.log(`Task ${id} updated successfully`);
-    return updatedTask;
+    return { message: 'Task updated successfully' };
   }
 
   async softDelete(id: number, userId: number) {
@@ -356,12 +415,13 @@ export class TasksService {
 
     await this.checkTaskPermission(task, userId);
 
-    return this.prisma.task.update({
+    await this.prisma.task.update({
       where: { id },
       data: {
         isSoftDelete: true,
       },
     });
+    return { message: 'soft deleted task successfully' };
   }
   async restoreTask(id: number, userId: number) {
     const task = await this.prisma.task.findFirst({
@@ -371,10 +431,11 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
     await this.checkTaskPermission(task, userId);
-    return this.prisma.task.update({
+    await this.prisma.task.update({
       where: { id },
       data: { isSoftDelete: false },
     });
+    return { message: 'Task restored successfully' };
   }
   async changeStatus(id: number, status: TaskStatus, userId: number) {
     this.logger.log(`User ${userId} changed task ${id} status to ${status}`);
@@ -406,11 +467,18 @@ export class TasksService {
         }
       }
     }
+    this.notificationService.notifyChangeStatus(
+      userId,
+      id,
+      task.status,
+      status,
+    );
 
-    return this.prisma.task.update({
+    await this.prisma.task.update({
       where: { id },
       data: { status },
     });
+    return { message: 'Task status changed successfully' };
   }
 
   async changePriority(id: number, priority: Priority, userId: number) {
@@ -418,12 +486,13 @@ export class TasksService {
 
     await this.checkTaskPermission(task, userId);
 
-    return this.prisma.task.update({
+    await this.prisma.task.update({
       where: { id },
       data: {
         priority,
       },
     });
+    return { message: 'Task priority changed successfully' };
   }
   async changeDeadline(id: number, dueTo: Date, userId: number) {
     const task = await this.getTaskOrThrow(id);
@@ -456,11 +525,11 @@ export class TasksService {
       );
     }
 
-    return updatedTask;
+    return { message: 'Task deadline changed successfully' };
   }
 
   async assignTask(id: number, assignedTo: number) {
-    const task = await this.findOne(id);
+    const task = await this.findOne(id, assignedTo);
 
     if (task.workspaceStyle === WorkspaceStyle.TEAM) {
       const member = await this.prisma.teamMember.findFirst({
@@ -489,10 +558,11 @@ export class TasksService {
         assignedTo,
         task.title,
         task.team.name,
+        task.id,
       );
     }
 
-    return updatedTask;
+    return { message: 'The assigned task has been updated' };
   }
 
   async getMyTasks(userId: number) {
@@ -502,7 +572,9 @@ export class TasksService {
         isSoftDelete: false,
       },
       include: {
-        taskTags: { select: { tag: { select: { id: true, name: true } } } },
+        taskTags: {
+          select: { tag: { select: { id: true, name: true, color: true } } },
+        },
       },
       orderBy: {
         dueTo: 'asc',
@@ -531,7 +603,9 @@ export class TasksService {
       include: {
         assignee: { select: { id: true, name: true, email: true } },
         creator: { select: { id: true, name: true, email: true } },
-        taskTags: { select: { tag: { select: { id: true, name: true } } } },
+        taskTags: {
+          select: { tag: { select: { id: true, name: true, color: true } } },
+        },
       },
     });
   }
@@ -555,7 +629,9 @@ export class TasksService {
         isSoftDelete: false,
       },
       include: {
-        taskTags: { select: { tag: { select: { id: true, name: true } } } },
+        taskTags: {
+          select: { tag: { select: { id: true, name: true, color: true } } },
+        },
       },
     });
   }
@@ -573,7 +649,9 @@ export class TasksService {
         dueTo: 'asc',
       },
       include: {
-        taskTags: { select: { tag: { select: { id: true, name: true } } } },
+        taskTags: {
+          select: { tag: { select: { id: true, name: true, color: true } } },
+        },
       },
     });
   }
@@ -594,7 +672,9 @@ export class TasksService {
         dueTo: 'asc',
       },
       include: {
-        taskTags: { select: { tag: { select: { id: true, name: true } } } },
+        taskTags: {
+          select: { tag: { select: { id: true, name: true, color: true } } },
+        },
       },
     });
   }
@@ -603,47 +683,87 @@ export class TasksService {
       where: {
         id: taskId,
       },
+      select: {
+        id: true,
+        teamId: true,
+      },
     });
 
     if (!task) {
       throw new NotFoundException('Task not found');
     }
 
-    const tags = await this.prisma.tag.findMany({
+    const isTeamTask = task.teamId !== null;
+
+    const validTags = await this.prisma.tag.findMany({
       where: {
         id: {
           in: tagIds,
         },
-
-        OR: [
-          {
-            userId: userId,
-          },
-
-          {
-            teamId: task.teamId ?? undefined,
-          },
-        ],
+        ...(isTeamTask
+          ? {
+              teamId: task.teamId,
+              userId: null,
+            }
+          : {
+              userId,
+              teamId: null,
+            }),
+      },
+      select: {
+        id: true,
       },
     });
-    // console.log(taskId, tagIds, userId);
-    if (tags.length !== tagIds.length) {
-      throw new ForbiddenException(
-        'You do not have permission to use these tags',
+
+    const validTagIds = validTags.map((tag) => tag.id);
+
+    if (validTagIds.length !== tagIds.length) {
+      throw new BadRequestException(
+        'One or more tags do not belong to this task.',
       );
     }
 
-    await this.prisma.taskTag.createMany({
-      data: tagIds.map((tagId) => ({
+    const existingTaskTags = await this.prisma.taskTag.findMany({
+      where: {
+        taskId,
+        tagId: {
+          in: validTagIds,
+        },
+      },
+      select: {
+        tagId: true,
+      },
+    });
+
+    const existingTagIds = new Set(existingTaskTags.map((item) => item.tagId));
+
+    const newTaskTags = validTagIds
+      .filter((tagId) => !existingTagIds.has(tagId))
+      .map((tagId) => ({
         taskId,
         tagId,
-      })),
+      }));
 
-      skipDuplicates: true,
-    });
-    return { message: 'Tag attached to task successfully' };
+    if (newTaskTags.length > 0) {
+      await this.prisma.taskTag.createMany({
+        data: newTaskTags,
+        skipDuplicates: true,
+      });
+    }
+
+    return {
+      message: 'Tags attached successfully',
+      added: newTaskTags.length,
+      skipped: existingTagIds.size,
+    };
   }
   async removeTag(taskId: number, tagId: number) {
+    const taskTag = await this.prisma.taskTag.findUnique({
+      where: { taskId_tagId: { taskId, tagId } },
+    });
+    if (!taskTag) {
+      throw new NotFoundException('Tag not found in this task');
+    }
     await this.prisma.taskTag.delete({
       where: {
         taskId_tagId: {
@@ -652,6 +772,7 @@ export class TasksService {
         },
       },
     });
+
     return { message: 'Tag removed from task successfully' };
   }
   async removeTask(id: number, userId: number) {
@@ -666,16 +787,23 @@ export class TasksService {
         'Task must be soft deleted before permanent deletion',
       );
     }
-    await this.prisma.taskTag.deleteMany({ where: { taskId: id } });
-    await this.prisma.comment.deleteMany({
-      where: {
-        taskId: id,
-      },
-    });
-    await this.prisma.taskReminderLog.deleteMany({ where: { taskId: id } });
-    await this.prisma.task.delete({
-      where: { id },
-    });
+    await this.prisma.$transaction([
+      this.prisma.taskTag.deleteMany({
+        where: { taskId: id },
+      }),
+      this.prisma.comment.deleteMany({
+        where: { taskId: id },
+      }),
+      this.prisma.notification.deleteMany({
+        where: { taskId: id },
+      }),
+      this.prisma.taskReminderLog.deleteMany({
+        where: { taskId: id },
+      }),
+      this.prisma.task.delete({
+        where: { id },
+      }),
+    ]);
     return { message: 'Deleted task successfully' };
   }
 }

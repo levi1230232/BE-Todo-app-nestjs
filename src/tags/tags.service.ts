@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -125,7 +126,7 @@ export class TagsService {
       },
     });
     this.logger.log(`Tag ${tag.id} created successfully by user ${userId}`);
-    return tag;
+    return { message: 'Tag created successfully' };
   }
   async update(id: number, userId: number, dto: UpdateTagDto) {
     this.logger.log(`User ${userId} updating tag ${id}`);
@@ -137,6 +138,19 @@ export class TagsService {
       }
     } else {
       await this.checkTeamPermission(userId, tag.teamId!);
+    }
+
+    const targetTeamId = dto.teamId ?? tag.teamId;
+    const targetUserId = tag.userId;
+    if (targetUserId && targetTeamId) {
+      throw new BadRequestException(
+        'Tag cannot belong to both a user and a team',
+      );
+    }
+    if (!targetUserId && !targetTeamId) {
+      throw new BadRequestException(
+        'Tag must belong to either a user or a team',
+      );
     }
 
     if (dto.name && dto.name !== tag.name) {
@@ -160,11 +174,15 @@ export class TagsService {
 
     const updated = await this.prisma.tag.update({
       where: { id },
-      data: dto,
+      data: {
+        ...dto,
+        userId: targetUserId ?? null,
+        teamId: targetUserId ? null : targetTeamId,
+      },
     });
     this.logger.log(`Tag ${id} updated successfully`);
 
-    return updated;
+    return { message: 'Tag updated successfully' };
   }
   async findAllPersonal(userId: number) {
     this.logger.log(`Getting all personal tags of user ${userId}`);
@@ -226,6 +244,6 @@ export class TagsService {
       where: { id },
     });
     this.logger.log(`Tag ${id} deleted successfully by user ${userId}`);
-    return { message: 'Deleted tag successfully' };
+    return { message: 'Tag deleted successfully' };
   }
 }

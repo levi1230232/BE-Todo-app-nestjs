@@ -21,9 +21,8 @@ enum TeamMemberRole {
 enum TaskStatus {
   PENDING
   IN_PROGRESS
+  REVIEW
   COMPLETED
-  CANCELLED
-  OVERDUE
 }
 
 enum Priority {
@@ -41,6 +40,26 @@ enum NotificationType {
   DEADLINE
   ASSIGNED
   COMMENT
+  STATUS_CHANGED
+}
+model Session {
+  id         String   @id @default(cuid())
+  refreshJti String @unique
+
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  sessionId  String   @unique
+  deviceName String?
+  ipAddress  String?
+
+  revoked    Boolean  @default(false)
+
+  expiredAt  DateTime
+
+  createdAt  DateTime @default(now())
+  @@index([userId])
+  @@index([sessionId, revoked])
 }
 
 model User {
@@ -49,8 +68,12 @@ model User {
   email        String   @unique
   password     String
   role         UserRole
-  refreshToken String?
+  isDelete   Boolean @default(false)
 
+  passwordChangedAt DateTime?
+  loginFailedCount Int @default(0)
+  lockedUntil DateTime?
+  tokenVersion Int @default(0)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -63,8 +86,24 @@ model User {
   ownedTeams    Team[]            @relation("TeamOwner")
   tags          Tag[]
   reminderLogs  TaskReminderLog[]
-
+  sessions Session[]
+  passwordResetTokens PasswordResetToken[]
   @@map("users")
+}
+model PasswordResetToken {
+  id String @id @default(cuid())
+
+  userId Int
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String
+
+  expiredAt DateTime
+
+  used Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  @@index([tokenHash, used])
 }
 
 model Team {

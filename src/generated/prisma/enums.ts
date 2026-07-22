@@ -29,9 +29,8 @@ export type TeamMemberRole = (typeof TeamMemberRole)[keyof typeof TeamMemberRole
 export const TaskStatus = {
   PENDING: 'PENDING',
   IN_PROGRESS: 'IN_PROGRESS',
-  COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED',
-  OVERDUE: 'OVERDUE'
+  REVIEW: 'REVIEW',
+  COMPLETED: 'COMPLETED'
 } as const
 
 export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus]
@@ -57,7 +56,8 @@ export type WorkspaceStyle = (typeof WorkspaceStyle)[keyof typeof WorkspaceStyle
 export const NotificationType = {
   DEADLINE: 'DEADLINE',
   ASSIGNED: 'ASSIGNED',
-  COMMENT: 'COMMENT'
+  COMMENT: 'COMMENT',
+  STATUS_CHANGED: 'STATUS_CHANGED'
 } as const
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]

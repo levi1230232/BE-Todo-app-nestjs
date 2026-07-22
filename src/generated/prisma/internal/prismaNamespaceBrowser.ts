@@ -51,7 +51,9 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
+  Session: 'Session',
   User: 'User',
+  PasswordResetToken: 'PasswordResetToken',
   Team: 'Team',
   TeamMember: 'TeamMember',
   Category: 'Category',
@@ -79,18 +81,50 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+export const SessionScalarFieldEnum = {
+  id: 'id',
+  refreshJti: 'refreshJti',
+  userId: 'userId',
+  userAgent: 'userAgent',
+  sessionId: 'sessionId',
+  deviceName: 'deviceName',
+  ipAddress: 'ipAddress',
+  revoked: 'revoked',
+  expiredAt: 'expiredAt',
+  createdAt: 'createdAt'
+} as const
+
+export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
+
+
 export const UserScalarFieldEnum = {
   id: 'id',
   name: 'name',
   email: 'email',
   password: 'password',
   role: 'role',
-  refreshToken: 'refreshToken',
+  isDelete: 'isDelete',
+  passwordChangedAt: 'passwordChangedAt',
+  loginFailedCount: 'loginFailedCount',
+  lockedUntil: 'lockedUntil',
+  tokenVersion: 'tokenVersion',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const PasswordResetTokenScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tokenHash: 'tokenHash',
+  expiredAt: 'expiredAt',
+  used: 'used',
+  createdAt: 'createdAt'
+} as const
+
+export type PasswordResetTokenScalarFieldEnum = (typeof PasswordResetTokenScalarFieldEnum)[keyof typeof PasswordResetTokenScalarFieldEnum]
 
 
 export const TeamScalarFieldEnum = {

@@ -65,11 +65,13 @@ export class TeamsService {
         },
       },
       include: {
-        members: true,
+        members: {
+          select: { userId: true, role: true },
+        },
       },
     });
     this.logger.log(`Team ${team.id} created successfully`);
-    return team;
+    return { message: 'Team created successfully' };
   }
   async findAll(userId: number) {
     this.logger.log(`Getting all teams of user ${userId}`);
@@ -113,10 +115,27 @@ export class TeamsService {
     return this.prisma.team.findUnique({
       where: { id: teamId },
       include: {
-        owner: { select: { name: true, email: true, id: true } },
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
         members: {
+          where: {
+            role: {
+              not: 'OWNER',
+            },
+          },
           include: {
-            user: { select: { name: true, email: true, id: true } },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
           },
         },
       },
@@ -131,7 +150,7 @@ export class TeamsService {
       data: dto,
     });
     this.logger.log(`Team ${teamId} updated successfully`);
-    return team;
+    return { message: 'Team updated successfully' };
   }
   async remove(teamId: number, userId: number) {
     this.logger.log(`User ${userId} deleting team ${teamId}`);
@@ -159,9 +178,16 @@ export class TeamsService {
       where: {
         teamId,
       },
-      include: {
+      select: {
+        id: true,
+        role: true,
+        joinAt: true,
         user: {
-          select: { id: true, name: true, email: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
         },
       },
     });
@@ -192,8 +218,7 @@ export class TeamsService {
       this.logger.warn(`User ${dto.userId} already exists in team ${teamId}`);
       throw new ConflictException('User already in team');
     }
-
-    const member = await this.prisma.teamMember.create({
+    await this.prisma.teamMember.create({
       data: {
         teamId,
         userId: dto.userId,
@@ -201,7 +226,7 @@ export class TeamsService {
       },
     });
     this.logger.log(`User ${dto.userId} added to team ${teamId} successfully`);
-    return member;
+    return { message: 'User added to team successfully' };
   }
   async updateMemberRole(
     teamId: number,
@@ -230,7 +255,7 @@ export class TeamsService {
       throw new BadRequestException('Cannot change owner role');
     }
     this.logger.log(`Role of member ${memberId} updated to ${role}`);
-    return this.prisma.teamMember.update({
+    await this.prisma.teamMember.update({
       where: {
         id: memberId,
       },
@@ -238,6 +263,7 @@ export class TeamsService {
         role,
       },
     });
+    return { message: 'Role of member updated' };
   }
   async removeMember(userId: number, teamId: number, ownerId: number) {
     this.logger.log(

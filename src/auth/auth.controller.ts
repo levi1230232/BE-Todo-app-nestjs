@@ -13,6 +13,7 @@ import {
 } from '@nestjs/swagger';
 import { ForgotPasswordDto } from './dto/forgotpassword.dto';
 import { ResetPasswordDto } from './dto/changepassword.dto';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -20,6 +21,12 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('register')
+  @Throttle({
+    default: {
+      ttl: 60 * 60_000,
+      limit: 100,
+    },
+  })
   @ApiOperation({
     summary: 'Register a new user',
     description: 'Creates a new user account with the provided information.',
@@ -42,6 +49,9 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({
+    default: { ttl: 60_000, limit: 5 },
+  })
   @ApiOperation({
     summary: 'User login',
     description:
@@ -56,8 +66,8 @@ export class AuthController {
     status: 401,
     description: 'Invalid email or password.',
   })
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  login(@Body() dto: LoginDto, @Req() req) {
+    return this.authService.login(dto, req.ip, req.headers['user-agent']);
   }
 
   @Post('refresh')
@@ -106,9 +116,16 @@ export class AuthController {
     description: 'Unauthorized.',
   })
   logout(@Req() req: any) {
-    return this.authService.logout(req.user.id);
+    return this.authService.logout(req.user.sid);
   }
+
   @Post('forgot-password')
+  @Throttle({
+    default: {
+      ttl: 15 * 60_000,
+      limit: 3,
+    },
+  })
   @ApiOperation({
     summary: 'Request a password reset link',
     description:
@@ -134,7 +151,14 @@ export class AuthController {
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
   }
+
   @Post('reset-password')
+  @Throttle({
+    default: {
+      ttl: 15 * 60_000,
+      limit: 5,
+    },
+  })
   @ApiOperation({
     summary: 'Reset user password',
     description: 'Resets the user password using a valid password reset token.',
@@ -144,7 +168,7 @@ export class AuthController {
     examples: {
       example: {
         value: {
-          token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+          token: 'd8a8f1181f...',
           password: 'NewPassword123@',
         },
       },
@@ -159,5 +183,25 @@ export class AuthController {
   })
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
+  }
+
+  @Post('logout-all')
+  @UseGuards(JwtGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Logout all devices',
+    description: 'Revokes all active sessions of the current user.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'All sessions revoked successfully.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized.',
+  })
+  logoutAll(@Req() req) {
+    console.log(req.user);
+    return this.authService.logoutAll(req.user.id);
   }
 }

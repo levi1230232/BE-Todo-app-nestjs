@@ -15,7 +15,6 @@ export class CommentService {
   private readonly logger = new Logger(CommentService.name);
   constructor(
     private readonly prisma: PrismaService,
-
     private readonly notificationService: NotificationService,
   ) {}
 
@@ -101,10 +100,11 @@ export class CommentService {
         task.title,
         comment.user.name,
         task.team?.name,
+        task.id,
       );
     }
 
-    return comment;
+    return { message: 'Comment created successfully' };
   }
   async findByTask(taskId: number) {
     this.logger.log(`Fetching comments for task ${taskId}`);
@@ -146,13 +146,13 @@ export class CommentService {
       throw new ForbiddenException();
     }
 
-    const updated = await this.prisma.comment.update({
+    await this.prisma.comment.update({
       where: { id },
       data: dto,
     });
     this.logger.log(`Comment ${id} updated successfully`);
 
-    return updated;
+    return { message: 'Comment updated successfully' };
   }
 
   async remove(id: number, userId: number) {

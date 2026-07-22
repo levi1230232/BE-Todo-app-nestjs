@@ -79,18 +79,18 @@ export class TaskController {
   create(@Req() req, @Body() dto: CreateTaskDto) {
     return this.taskService.create(req.user.id, dto);
   }
-  @Get()
-  @UseGuards(RolesGuard)
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get all tasks (only admin)' })
-  @ApiQuery({ name: 'status', required: false, enum: TaskStatus })
-  @ApiQuery({ name: 'priority', required: false, enum: Priority })
-  @ApiQuery({ name: 'assignedTo', required: false, type: Number })
-  @ApiQuery({ name: 'teamId', required: false, type: Number })
-  @ApiResponse({ status: 200, description: 'List of tasks.' })
-  findAll(@Query() query: QueryTaskDto) {
-    return this.taskService.findAll(query);
-  }
+  // @Get()
+  // @UseGuards(RolesGuard)
+  // @Roles('ADMIN')
+  // @ApiOperation({ summary: 'Get all tasks (only admin)' })
+  // @ApiQuery({ name: 'status', required: false, enum: TaskStatus })
+  // @ApiQuery({ name: 'priority', required: false, enum: Priority })
+  // @ApiQuery({ name: 'assignedTo', required: false, type: Number })
+  // @ApiQuery({ name: 'teamId', required: false, type: Number })
+  // @ApiResponse({ status: 200, description: 'List of tasks.' })
+  // findAll(@Query() query: QueryTaskDto) {
+  //   return this.taskService.findAll(query);
+  // }
 
   @Get('me')
   @ApiOperation({
@@ -246,8 +246,9 @@ export class TaskController {
   findOne(
     @Param('id', ParseIntPipe)
     id: number,
+    @Req() req,
   ) {
-    return this.taskService.findOne(id);
+    return this.taskService.findOne(id, req.user.id);
   }
 
   @Put(':id')
@@ -406,9 +407,9 @@ export class TaskController {
     schema: {
       type: 'object',
       properties: {
-        priority: {
+        status: {
           type: 'string',
-          enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'OVERDUE'],
+          enum: ['PENDING', 'IN_PROGRESS', 'REVIEW', 'COMPLETED'],
           example: 'PENDING',
           description: 'New task ',
         },
