@@ -195,6 +195,7 @@ model Task {
   reminderLogs  TaskReminderLog[]
 
   @@map("task")
+  @@index([dueTo])
 }
 
 model Comment {

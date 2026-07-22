@@ -1,11 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-
 import { Cron, CronExpression } from '@nestjs/schedule';
-
 import { PrismaService } from '../prisma/prisma.service';
-
 import { NotificationService } from 'src/notifications/notifications.service';
-import { Task } from 'src/generated/prisma/client';
 
 @Injectable()
 export class DeadlineScheduler {
@@ -13,7 +9,6 @@ export class DeadlineScheduler {
 
   constructor(
     private readonly prisma: PrismaService,
-
     private readonly notificationService: NotificationService,
   ) {}
 
@@ -23,65 +18,76 @@ export class DeadlineScheduler {
 
     const now = new Date();
 
-    const vnNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const maxReminder = 60;
+
+    const maxDueTime = new Date(now.getTime() + maxReminder * 60 * 1000);
 
     const tasks = await this.prisma.task.findMany({
       where: {
         isSoftDelete: false,
-
+        assignedTo: {
+          not: null,
+        },
         status: {
           not: 'COMPLETED',
         },
-
         dueTo: {
-          gt: vnNow,
+          gte: now,
+          lte: maxDueTime,
         },
       },
     });
 
-    for (const task of tasks) {
-      await this.checkTask(task, vnNow);
-    }
-  }
+    if (!tasks.length) return;
 
-  private async checkTask(task: Task, now: Date) {
-    const deadline = new Date(task.dueTo);
-
-    const diff = Math.floor((deadline.getTime() - now.getTime()) / 60000);
-
-    if (diff > task.reminder || diff < 0) {
-      return;
-    }
-    const existed = await this.prisma.taskReminderLog.findUnique({
+    const reminderLogs = await this.prisma.taskReminderLog.findMany({
       where: {
-        taskId_userId_reminderType: {
-          taskId: task.id,
-          userId: task.assignedTo,
-          reminderType: 'DEADLINE',
+        reminderType: 'DEADLINE',
+        taskId: {
+          in: tasks.map((t) => t.id),
         },
       },
     });
 
-    if (existed) {
-      return;
-    }
-    if (!task.assignedTo) {
-      return;
-    }
-
-    await this.notificationService.notifyDeadline(
-      task.assignedTo,
-      task.id,
-      task.title,
-      false,
+    const reminded = new Set(
+      reminderLogs.map((log) => `${log.taskId}-${log.userId}`),
     );
 
-    await this.prisma.taskReminderLog.create({
-      data: {
-        taskId: task.id,
-        userId: task.assignedTo,
-        reminderType: 'DEADLINE',
-      },
-    });
+    const notifications = [];
+
+    for (const task of tasks) {
+      const diff = Math.floor((task.dueTo.getTime() - now.getTime()) / 60000);
+
+      if (diff > task.reminder || diff < 0) {
+        continue;
+      }
+
+      const key = `${task.id}-${task.assignedTo}`;
+
+      if (reminded.has(key)) {
+        continue;
+      }
+
+      notifications.push(
+        (async () => {
+          await this.notificationService.notifyDeadline(
+            task.assignedTo!,
+            task.id,
+            task.title,
+            false,
+          );
+
+          await this.prisma.taskReminderLog.create({
+            data: {
+              taskId: task.id,
+              userId: task.assignedTo!,
+              reminderType: 'DEADLINE',
+            },
+          });
+        })(),
+      );
+    }
+
+    await Promise.all(notifications);
   }
 }
