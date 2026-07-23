@@ -196,6 +196,11 @@ model Task {
 
   @@map("task")
   @@index([dueTo])
+  @@index([assignedTo, isSoftDelete])
+  @@index([assignedTo])
+  @@index([createBy])
+  @@index([teamId])
+  @@index([categoryId])
 }
 
 model Comment {
@@ -207,7 +212,7 @@ model Comment {
 
   task Task @relation(fields: [taskId], references: [id])
   user User @relation(fields: [userId], references: [id])
-
+  @@index([taskId, createdAt])
   @@map("comment")
 }
 
@@ -223,7 +228,7 @@ model Notification {
 
   user User  @relation(fields: [userId], references: [id])
   task Task? @relation(fields: [taskId], references: [id])
-
+  @@index([userId, isRead, createdAt])
   @@map("notification")
 }
 
@@ -239,6 +244,9 @@ model TaskReminderLog {
 
   @@unique([taskId, userId, reminderType])
   @@map("task_reminder_log")
+  @@index([sentAt])
+  @@index([taskId])
+  @@index([userId])
 }
 
 model TaskTag {
