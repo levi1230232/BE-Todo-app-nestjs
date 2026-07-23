@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -14,6 +14,7 @@ import {
 import { ForgotPasswordDto } from './dto/forgotpassword.dto';
 import { ResetPasswordDto } from './dto/changepassword.dto';
 import { Throttle } from '@nestjs/throttler';
+import { Response } from 'express';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -66,27 +67,34 @@ export class AuthController {
     status: 401,
     description: 'Invalid email or password.',
   })
-  login(@Body() dto: LoginDto, @Req() req) {
-    return this.authService.login(dto, req.ip, req.headers['user-agent']);
+  login(
+    @Body() dto: LoginDto,
+    @Req() req,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.login(dto, req.ip, req.headers['user-agent'], res);
   }
 
   @Post('refresh')
+  @Throttle({
+    default: { ttl: 60_000, limit: 5 },
+  })
   @ApiOperation({
     summary: 'Refresh access token',
     description: 'Generates a new access token using a valid refresh token.',
   })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        refreshToken: {
-          type: 'string',
-          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        },
-      },
-      required: ['refreshToken'],
-    },
-  })
+  // @ApiBody({
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       refreshToken: {
+  //         type: 'string',
+  //         example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+  //       },
+  //     },
+  //     required: ['refreshToken'],
+  //   },
+  // })
   @ApiResponse({
     status: 200,
     description: 'Access token refreshed successfully.',
@@ -95,8 +103,8 @@ export class AuthController {
     status: 401,
     description: 'Invalid or expired refresh token.',
   })
-  refresh(@Body('refreshToken') token: string) {
-    return this.authService.refreshToken(token);
+  refresh(@Req() req, @Res({ passthrough: true }) res: Response) {
+    return this.authService.refreshToken(req.cookies.refreshToken, res);
   }
 
   @Post('logout')
@@ -115,8 +123,8 @@ export class AuthController {
     status: 401,
     description: 'Unauthorized.',
   })
-  logout(@Req() req: any) {
-    return this.authService.logout(req.user.sid);
+  logout(@Req() req: any, @Res({ passthrough: true }) res: Response) {
+    return this.authService.logout(req.user.sid, res);
   }
 
   @Post('forgot-password')
@@ -200,8 +208,8 @@ export class AuthController {
     status: 401,
     description: 'Unauthorized.',
   })
-  logoutAll(@Req() req) {
+  logoutAll(@Req() req, @Res({ passthrough: true }) res: Response) {
     console.log(req.user);
-    return this.authService.logoutAll(req.user.id);
+    return this.authService.logoutAll(req.user.id, res);
   }
 }

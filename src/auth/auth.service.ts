@@ -15,6 +15,7 @@ import { ForgotPasswordDto } from './dto/forgotpassword.dto';
 import { ResetPasswordDto } from './dto/changepassword.dto';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { addDays } from 'date-fns';
+import { Response } from 'express';
 
 interface JwtPayload {
   sub: number;
@@ -45,7 +46,7 @@ export class AuthService {
       },
     });
 
-    if (sessions.length >= 5) {
+    if (sessions.length > 0) {
       await this.prisma.session.update({
         where: {
           id: sessions[0].id,
@@ -86,7 +87,7 @@ export class AuthService {
     };
   }
 
-  async login(dto: LoginDto, ip: string, agent: string) {
+  async login(dto: LoginDto, ip: string, agent: string, res: Response) {
     const user = await this.prisma.user.findUnique({
       where: {
         email: dto.email,
@@ -148,7 +149,18 @@ export class AuthService {
       }),
     ]);
 
-    return this.generateTokens(user, sessionId, refreshJti);
+    const tokens = await this.generateTokens(user, sessionId, refreshJti);
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/auth/refresh',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    // console.log(res.getHeader('Set-Cookie'));
+    return {
+      accessToken: tokens.accessToken,
+    };
   }
 
   async generateTokens(user: User, sid: string, jti: string) {
@@ -173,7 +185,7 @@ export class AuthService {
       }),
     };
   }
-  async refreshToken(token: string) {
+  async refreshToken(token: string, res: Response) {
     let payload: JwtPayload;
 
     try {
@@ -247,10 +259,21 @@ export class AuthService {
       }),
     ]);
 
-    return this.generateTokens(user, newSid, newJti);
+    const tokens = await this.generateTokens(user, newSid, newJti);
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/auth/refresh',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return {
+      accessToken: tokens.accessToken,
+    };
   }
 
-  async logout(sessionId: string) {
+  async logout(sessionId: string, res: Response) {
     await this.prisma.session.updateMany({
       where: {
         sessionId,
@@ -259,6 +282,9 @@ export class AuthService {
       data: {
         revoked: true,
       },
+    });
+    res.clearCookie('refreshToken', {
+      path: '/auth/refresh',
     });
 
     return {
@@ -346,7 +372,7 @@ export class AuthService {
     return { message: 'Password reset successfully', success: true };
   }
 
-  async logoutAll(userId: number) {
+  async logoutAll(userId: number, res: Response) {
     await this.prisma.$transaction([
       this.prisma.session.updateMany({
         where: {
@@ -369,6 +395,9 @@ export class AuthService {
         },
       }),
     ]);
+    res.clearCookie('refreshToken', {
+      path: '/auth/refresh',
+    });
 
     return {
       message: 'All devices logged out',
