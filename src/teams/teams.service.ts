@@ -128,7 +128,9 @@ export class TeamsService {
               not: 'OWNER',
             },
           },
-          include: {
+          select: {
+            role: true,
+            joinAt: true,
             user: {
               select: {
                 id: true,
