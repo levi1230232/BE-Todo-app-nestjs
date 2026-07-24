@@ -195,12 +195,20 @@ model Task {
   reminderLogs  TaskReminderLog[]
 
   @@map("task")
-  @@index([dueTo])
-  @@index([assignedTo, isSoftDelete])
   @@index([assignedTo])
-  @@index([createBy])
   @@index([teamId])
   @@index([categoryId])
+  @@index([status])
+  @@index([priority])
+  @@index([workspaceStyle])
+  @@index([createdAt])
+  @@index([dueTo])
+  @@index([assignedTo, dueTo])
+  @@index([teamId, status])
+  @@index([teamId, createdAt])
+  @@index([assignedTo, status])
+  @@index([assignedTo, status, dueTo])
+  @@index([isSoftDelete, createdAt])
 }
 
 model Comment {
