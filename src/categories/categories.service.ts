@@ -44,7 +44,7 @@ export class CategoryService {
     this.logger.log(
       `Category created successfully. CategoryId=${category.id}, UserId=${userId}`,
     );
-    return { message: 'Category created successfully' };
+    return category;
   }
 
   async findAll(userId: number) {
@@ -104,13 +104,13 @@ export class CategoryService {
       data: dto,
     });
     this.logger.log(`Category ${id} updated successfully`);
-    return { message: 'Category updated successfully' };
+    return category;
   }
 
   async remove(userId: number, id: number) {
     this.logger.log(`Deleting category ${id}, UserId=${userId}`);
     await this.findOne(userId, id);
-
+    await this.prisma.task.deleteMany({ where: { categoryId: id } });
     await this.prisma.category.delete({
       where: { id },
     });

@@ -71,7 +71,7 @@ export class TeamsService {
       },
     });
     this.logger.log(`Team ${team.id} created successfully`);
-    return { message: 'Team created successfully' };
+    return team;
   }
   async findAll(userId: number) {
     this.logger.log(`Getting all teams of user ${userId}`);
@@ -152,7 +152,7 @@ export class TeamsService {
       data: dto,
     });
     this.logger.log(`Team ${teamId} updated successfully`);
-    return { message: 'Team updated successfully' };
+    return team;
   }
   async remove(teamId: number, userId: number) {
     this.logger.log(`User ${userId} deleting team ${teamId}`);
@@ -271,50 +271,46 @@ export class TeamsService {
     this.logger.log(
       `Owner ${ownerId} removing user ${userId} from team ${teamId}`,
     );
-    const member = await this.prisma.teamMember.findFirst({
+
+    await this.checkOwner(teamId, ownerId);
+
+    const member = await this.prisma.teamMember.findUnique({
       where: {
-        userId,
-        teamId,
+        userId_teamId: {
+          userId,
+          teamId,
+        },
       },
     });
 
     if (!member) {
-      this.logger.warn(`User ${userId} is not a member of team ${teamId}`);
       throw new NotFoundException('Member not found in this team');
     }
 
-    await this.checkOwner(teamId, ownerId);
-
-    if (member.role === 'OWNER') {
-      this.logger.warn(`Attempt to remove owner from team ${teamId}`);
+    if (member.role === TeamMemberRole.OWNER) {
       throw new BadRequestException('Owner cannot be removed');
     }
-    const task = await this.prisma.task.findFirst({
-      where: {
-        teamId,
-        assignedTo: userId,
-      },
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.task.updateMany({
+        where: {
+          teamId,
+          assignedTo: userId,
+        },
+        data: {
+          assignedTo: null,
+        },
+      });
+
+      await tx.teamMember.delete({
+        where: {
+          id: member.id,
+        },
+      });
     });
 
-    if (!task) {
-      throw new NotFoundException('Task not found');
-    }
-
-    await this.prisma.task.update({
-      where: {
-        id: task.id,
-      },
-      data: {
-        assignedTo: null,
-      },
-    });
-
-    await this.prisma.teamMember.delete({
-      where: {
-        id: member.id,
-      },
-    });
     this.logger.log(`User ${userId} removed from team ${teamId}`);
+
     return {
       message: 'Removed member successfully',
     };
@@ -333,35 +329,45 @@ export class TeamsService {
       this.logger.warn(`User ${userId} is not a member of team ${teamId}`);
       throw new NotFoundException('You are not a member of this team');
     }
+
+    // Nếu là OWNER thì kiểm tra còn owner khác không
     if (member.role === 'OWNER') {
-      this.logger.warn(`Owner ${userId} attempted to leave team ${teamId}`);
-      throw new BadRequestException(
-        'Owner cannot leave the team. Transfer ownership or delete the team first.',
-      );
-    }
-    const task = await this.prisma.task.findFirst({
-      where: {
-        teamId,
-        assignedTo: userId,
-      },
-    });
+      const ownerCount = await this.prisma.teamMember.count({
+        where: {
+          teamId,
+          role: 'OWNER',
+        },
+      });
 
-    if (!task) {
-      throw new NotFoundException('Task not found');
+      if (ownerCount === 1) {
+        this.logger.warn(
+          `Last owner ${userId} attempted to leave team ${teamId}`,
+        );
+
+        throw new BadRequestException(
+          'You are the last owner. Transfer ownership or delete the team first.',
+        );
+      }
     }
 
-    await this.prisma.task.update({
-      where: {
-        id: task.id,
-      },
-      data: {
-        assignedTo: null,
-      },
-    });
-    await this.prisma.teamMember.delete({
-      where: {
-        id: member.id,
-      },
+    await this.prisma.$transaction(async (tx) => {
+      // Gỡ assign của tất cả task
+      await tx.task.updateMany({
+        where: {
+          teamId,
+          assignedTo: userId,
+        },
+        data: {
+          assignedTo: null,
+        },
+      });
+
+      // Xóa thành viên khỏi team
+      await tx.teamMember.delete({
+        where: {
+          id: member.id,
+        },
+      });
     });
 
     this.logger.log(`User ${userId} left team ${teamId}`);

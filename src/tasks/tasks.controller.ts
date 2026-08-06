@@ -35,6 +35,7 @@ import {
   ApiResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { GetDeletedTasksDto } from './dto/getDeletedTasksDto';
 
 @Controller('tasks')
 @UseGuards(JwtGuard)
@@ -77,6 +78,8 @@ export class TaskController {
   })
   @Post()
   create(@Req() req, @Body() dto: CreateTaskDto) {
+    console.log('BODY =', dto);
+    console.log('assignedTo =', dto.assignedTo);
     return this.taskService.create(req.user.id, dto);
   }
   // @Get()
@@ -213,7 +216,10 @@ export class TaskController {
   getOverdueTasks(@Req() req) {
     return this.taskService.getOverdueTasks(req.user.id);
   }
-
+  @Get('deleted')
+  getDeletedTasks(@Req() req, @Query() query: GetDeletedTasksDto) {
+    return this.taskService.getDeletedTasks(req.user.id, query);
+  }
   @Get(':id')
   @ApiOperation({
     summary: 'Get task by id',
@@ -313,7 +319,7 @@ export class TaskController {
     return this.taskService.update(id, dto, req.user.id);
   }
 
-  @Patch('softDelete/:id')
+  @Patch(':id/soft-delete')
   @ApiOperation({
     summary: 'Soft delete task',
     description: `
@@ -350,7 +356,7 @@ export class TaskController {
   ) {
     return this.taskService.softDelete(id, req.user.id);
   }
-  @Patch('restoreTask/:id')
+  @Patch(':id/restore')
   @ApiOperation({
     summary: 'Restore task',
     description: `
@@ -757,5 +763,37 @@ export class TaskController {
   })
   async removeTask(@Param('id', ParseIntPipe) id: number, @Req() req) {
     return this.taskService.removeTask(id, req.user.id);
+  }
+  @Get('category/:categoryId')
+  @ApiOperation({
+    summary: 'Get tasks by category',
+    description: `
+    Retrieve all tasks under a specific category for the authenticated user.
+
+    - Returns personal tasks associated with the given category ID.
+    - Requires the category to belong to the authenticated user.
+  `,
+  })
+  @ApiParam({
+    name: 'categoryId',
+    type: Number,
+    description: 'ID of the category',
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tasks retrieved successfully by category.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Category not found or does not belong to this user.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'User is not authenticated or token is invalid.',
+  })
+  getTaskByCategory(
+    @Param('categoryId', ParseIntPipe) categoryId: number,
+    @Req() req,
+  ) {
+    return this.taskService.getTaskByCategory(categoryId, req.user.id);
   }
 }

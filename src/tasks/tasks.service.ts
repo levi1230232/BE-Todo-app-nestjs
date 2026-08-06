@@ -439,14 +439,25 @@ export class TasksService {
   }
   async changeStatus(id: number, status: TaskStatus, userId: number) {
     this.logger.log(`User ${userId} changed task ${id} status to ${status}`);
+
     const task = await this.getTaskOrThrow(id);
+
+    if (task.status === status) {
+      return { message: 'Task status is already set to this value' };
+    }
 
     if (task.workspaceStyle === WorkspaceStyle.PERSONAL) {
       if (task.createBy !== userId) {
-        throw new ForbiddenException();
+        throw new ForbiddenException(
+          'You do not have permission to change task status',
+        );
       }
     } else {
-      if (task.assignedTo !== userId) {
+      const isAssignedUser = task.assignedTo === userId;
+
+      let isAdminOrOwner = false;
+
+      if (!isAssignedUser) {
         const member = await this.prisma.teamMember.findUnique({
           where: {
             userId_teamId: {
@@ -456,31 +467,35 @@ export class TasksService {
           },
         });
 
-        if (
-          !member ||
-          (member.role !== TeamMemberRole.OWNER &&
-            member.role !== TeamMemberRole.ADMIN)
-        ) {
+        isAdminOrOwner =
+          !!member &&
+          (member.role === TeamMemberRole.OWNER ||
+            member.role === TeamMemberRole.ADMIN);
+        if (!isAdminOrOwner) {
           throw new ForbiddenException(
             'You do not have permission to change task status',
           );
         }
       }
     }
-    this.notificationService.notifyChangeStatus(
-      userId,
-      id,
-      task.status,
-      status,
-    );
+
+    const oldStatus = task.status;
 
     await this.prisma.task.update({
       where: { id },
       data: { status },
     });
+
+    // Luôn gửi thông báo sau khi cập nhật thành công
+    await this.notificationService.notifyChangeStatus(
+      userId,
+      id,
+      oldStatus,
+      status,
+    );
+
     return { message: 'Task status changed successfully' };
   }
-
   async changePriority(id: number, priority: Priority, userId: number) {
     const task = await this.getTaskOrThrow(id);
 
@@ -805,5 +820,144 @@ export class TasksService {
       }),
     ]);
     return { message: 'Deleted task successfully' };
+  }
+  async getTaskByCategory(categoryId: number, userId: number) {
+    const category = await this.prisma.category.findFirst({
+      where: {
+        id: categoryId,
+        userId,
+      },
+    });
+
+    if (!category) {
+      throw new NotFoundException(
+        'Category not found or does not belong to this user',
+      );
+    }
+    const tasks = await this.prisma.task.findMany({
+      where: {
+        categoryId,
+        assignedTo: userId,
+        workspaceStyle: WorkspaceStyle.PERSONAL,
+        isSoftDelete: false,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        creator: {
+          select: { id: true, name: true, email: true },
+        },
+        assignee: {
+          select: { id: true, name: true, email: true },
+        },
+        category: {
+          select: { id: true, name: true },
+        },
+        taskTags: {
+          select: {
+            tag: {
+              select: { id: true, name: true, color: true },
+            },
+          },
+        },
+      },
+    });
+
+    return {
+      tasks,
+    };
+  }
+  async getDeletedTasks(
+    userId: number,
+    options?: { teamId?: number | null; categoryId?: number | null },
+  ) {
+    const teamId = options?.teamId ?? null;
+    const categoryId = options?.categoryId ?? null;
+
+    // Không cho phép truyền cả hai
+    if (teamId && categoryId) {
+      throw new BadRequestException(
+        'Only one of teamId or categoryId can be provided',
+      );
+    }
+
+    const where: Prisma.TaskWhereInput = {
+      isSoftDelete: true,
+    };
+
+    if (teamId) {
+      const member = await this.prisma.teamMember.findUnique({
+        where: {
+          userId_teamId: {
+            userId,
+            teamId,
+          },
+        },
+      });
+
+      if (!member) {
+        throw new ForbiddenException('You are not a member of this team');
+      }
+
+      // if (
+      //   member.role !== TeamMemberRole.OWNER &&
+      //   member.role !== TeamMemberRole.ADMIN
+      // ) {
+      //   throw new ForbiddenException(
+      //     'Only OWNER or ADMIN can view deleted tasks of this team',
+      //   );
+      // }
+
+      where.teamId = teamId;
+      where.categoryId = null;
+      where.workspaceStyle = WorkspaceStyle.TEAM;
+    } else if (categoryId) {
+      const category = await this.prisma.category.findFirst({
+        where: {
+          id: categoryId,
+          userId,
+        },
+      });
+
+      if (!category) {
+        throw new NotFoundException(
+          'Category not found or does not belong to this user',
+        );
+      }
+
+      where.categoryId = categoryId;
+      where.teamId = null; // category => team = null
+      where.workspaceStyle = WorkspaceStyle.PERSONAL;
+      where.createBy = userId;
+    } else {
+      where.teamId = null;
+      where.categoryId = null;
+      where.workspaceStyle = WorkspaceStyle.PERSONAL;
+      where.createBy = userId;
+    }
+
+    return this.prisma.task.findMany({
+      where,
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      include: {
+        creator: { select: { id: true, name: true, email: true } },
+        assignee: { select: { id: true, name: true, email: true } },
+        category: { select: { id: true, name: true } },
+        taskTags: {
+          select: {
+            tag: {
+              select: {
+                id: true,
+                name: true,
+                color: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 }

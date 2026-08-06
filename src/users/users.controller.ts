@@ -8,6 +8,7 @@ import {
   ParseIntPipe,
   Req,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 
 import { UsersService } from './users.service';
@@ -119,5 +120,9 @@ export class UsersController {
   })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.remove(id);
+  }
+  @Get('/find-by-email')
+  getByEmail(@Query('email') email: string) {
+    return this.usersService.findByEmail(email);
   }
 }

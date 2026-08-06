@@ -15,10 +15,11 @@ async function bootstrap() {
     }),
   );
   app.enableCors({
-    origin: '*',
+    origin: 'http://localhost:3000',
     credentials: true,
   });
   app.use(cookieParser());
+  app.setGlobalPrefix('api');
   app.set('trust proxy', 1);
   const config = new DocumentBuilder()
     .setTitle('Todo API')
@@ -30,7 +31,7 @@ async function bootstrap() {
 
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3001);
   // console.log(process.env.DATABASE_URL);
 }
 bootstrap();

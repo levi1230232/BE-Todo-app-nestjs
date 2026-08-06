@@ -90,6 +90,7 @@ export class UsersService {
       where: {
         email,
       },
+      select: { id: true, name: true, email: true, role: true },
     });
   }
 }

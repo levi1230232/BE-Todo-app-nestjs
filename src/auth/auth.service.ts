@@ -154,7 +154,7 @@ export class AuthService {
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
-      path: '/auth/refresh',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     // console.log(res.getHeader('Set-Cookie'));
@@ -264,7 +264,7 @@ export class AuthService {
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
-      path: '/auth/refresh',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -284,7 +284,7 @@ export class AuthService {
       },
     });
     res.clearCookie('refreshToken', {
-      path: '/auth/refresh',
+      path: '/',
     });
 
     return {
@@ -396,7 +396,7 @@ export class AuthService {
       }),
     ]);
     res.clearCookie('refreshToken', {
-      path: '/auth/refresh',
+      path: '/',
     });
 
     return {

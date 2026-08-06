@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -73,7 +74,7 @@ export class TeamsController {
     return this.teamsService.findOne(+id, req.user.id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @ApiOperation({ summary: 'Update team information' })
   @ApiParam({
     name: 'id',
@@ -243,10 +244,10 @@ export class TeamsController {
   })
   removeMember(
     @Req() req,
-    @Param('teamId') teamId: string,
-    @Param('memberId') memberId: string,
+    @Param('teamId', ParseIntPipe) teamId: number,
+    @Param('memberId', ParseIntPipe) memberId: number,
   ) {
-    return this.teamsService.removeMember(+memberId, +teamId, req.user.id);
+    return this.teamsService.removeMember(memberId, teamId, req.user.id);
   }
   @ApiOperation({ summary: 'Leave team' })
   @ApiParam({
