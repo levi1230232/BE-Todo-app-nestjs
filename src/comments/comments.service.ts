@@ -167,12 +167,12 @@ export class CommentService {
       throw new NotFoundException();
     }
 
-    if (comment.userId !== userId) {
-      this.logger.warn(
-        `User ${userId} attempted to delete comment ${id} owned by user ${comment.userId}`,
-      );
-      throw new ForbiddenException();
-    }
+    // if (comment.userId !== userId) {
+    //   this.logger.warn(
+    //     `User ${userId} attempted to delete comment ${id} owned by user ${comment.userId}`,
+    //   );
+    //   throw new ForbiddenException();
+    // }
 
     await this.prisma.comment.delete({
       where: { id },

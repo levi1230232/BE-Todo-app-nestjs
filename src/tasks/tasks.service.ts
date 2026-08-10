@@ -455,22 +455,25 @@ export class TasksService {
     } else {
       const isAssignedUser = task.assignedTo === userId;
 
-      let isAdminOrOwner = false;
-
       if (!isAssignedUser) {
+        if (!task.teamId) {
+          throw new BadRequestException('Team task missing teamId');
+        }
+
         const member = await this.prisma.teamMember.findUnique({
           where: {
             userId_teamId: {
               userId,
-              teamId: task.teamId!,
+              teamId: task.teamId,
             },
           },
         });
 
-        isAdminOrOwner =
+        const isAdminOrOwner =
           !!member &&
           (member.role === TeamMemberRole.OWNER ||
             member.role === TeamMemberRole.ADMIN);
+
         if (!isAdminOrOwner) {
           throw new ForbiddenException(
             'You do not have permission to change task status',
@@ -481,20 +484,29 @@ export class TasksService {
 
     const oldStatus = task.status;
 
-    await this.prisma.task.update({
+    const updatedTask = await this.prisma.task.update({
       where: { id },
       data: { status },
     });
 
-    // Luôn gửi thông báo sau khi cập nhật thành công
-    await this.notificationService.notifyChangeStatus(
-      userId,
-      id,
-      oldStatus,
-      status,
-    );
+    try {
+      await this.notificationService.notifyChangeStatus(
+        userId,
+        id,
+        oldStatus,
+        status,
+      );
+    } catch (error: any) {
+      this.logger.error(
+        `Failed to send notification for task ${id}:`,
+        error?.stack || error,
+      );
+    }
 
-    return { message: 'Task status changed successfully' };
+    return {
+      message: 'Task status changed successfully',
+      data: updatedTask,
+    };
   }
   async changePriority(id: number, priority: Priority, userId: number) {
     const task = await this.getTaskOrThrow(id);

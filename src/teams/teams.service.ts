@@ -164,6 +164,9 @@ export class TeamsService {
       },
     });
 
+    await this.prisma.task.deleteMany({
+      where: { teamId },
+    });
     await this.prisma.team.delete({
       where: {
         id: teamId,
