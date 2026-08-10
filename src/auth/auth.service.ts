@@ -152,8 +152,8 @@ export class AuthService {
     const tokens = await this.generateTokens(user, sessionId, refreshJti);
     res.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -262,8 +262,8 @@ export class AuthService {
     const tokens = await this.generateTokens(user, newSid, newJti);
     res.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
