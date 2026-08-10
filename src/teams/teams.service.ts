@@ -157,23 +157,78 @@ export class TeamsService {
   async remove(teamId: number, userId: number) {
     this.logger.log(`User ${userId} deleting team ${teamId}`);
     await this.checkOwner(teamId, userId);
-
-    await this.prisma.teamMember.deleteMany({
-      where: {
-        teamId,
-      },
-    });
-
-    await this.prisma.task.deleteMany({
-      where: { teamId },
-    });
-    await this.prisma.team.delete({
-      where: {
-        id: teamId,
-      },
+    await this.prisma.$transaction(async (tx) => {
+      const tasks = await tx.task.findMany({
+        where: {
+          teamId,
+        },
+        select: {
+          id: true,
+        },
+      });
+      const taskIds = tasks.map((task) => task.id);
+      if (taskIds.length > 0) {
+        await tx.taskTag.deleteMany({
+          where: {
+            taskId: {
+              in: taskIds,
+            },
+          },
+        });
+        await tx.comment.deleteMany({
+          where: {
+            taskId: {
+              in: taskIds,
+            },
+          },
+        });
+        await tx.notification.deleteMany({
+          where: {
+            taskId: {
+              in: taskIds,
+            },
+          },
+        });
+        await tx.taskReminderLog.deleteMany({
+          where: {
+            taskId: {
+              in: taskIds,
+            },
+          },
+        });
+        await tx.task.deleteMany({
+          where: {
+            teamId,
+          },
+        });
+      }
+      await tx.taskTag.deleteMany({
+        where: {
+          tag: {
+            teamId,
+          },
+        },
+      });
+      await tx.tag.deleteMany({
+        where: {
+          teamId,
+        },
+      });
+      await tx.teamMember.deleteMany({
+        where: {
+          teamId,
+        },
+      });
+      await tx.team.delete({
+        where: {
+          id: teamId,
+        },
+      });
     });
     this.logger.log(`Team ${teamId} deleted successfully`);
-    return { message: 'Team deleted successfully' };
+    return {
+      message: 'Team deleted successfully',
+    };
   }
   async getMembers(teamId: number, userId: number) {
     this.logger.log(`User ${userId} requested members of team ${teamId}`);
