@@ -173,7 +173,7 @@ export class TasksService {
       );
     }
     this.logger.log(`Task ${task.id} created successfully by user ${userId}`);
-    return { message: 'Task created successfully' };
+    return task;
   }
 
   async findAll(query: QueryTaskDto) {
