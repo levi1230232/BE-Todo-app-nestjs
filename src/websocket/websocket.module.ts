@@ -15,7 +15,7 @@ import { WebsocketService } from './websocket.service';
       inject: [ConfigService],
 
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET'),
+        secret: config.get<string>('JWT_ACCESS_SECRET'),
       }),
     }),
   ],
