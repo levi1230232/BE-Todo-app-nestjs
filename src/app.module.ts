@@ -32,7 +32,7 @@ import { APP_GUARD } from '@nestjs/core';
     WebsocketModule,
     SchedulerModule,
     MailModule,
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 20 }]),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 50 }]),
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
