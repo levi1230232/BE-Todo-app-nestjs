@@ -77,7 +77,7 @@ export class AuthController {
 
   @Post('refresh')
   @Throttle({
-    default: { ttl: 60_000, limit: 5 },
+    default: { ttl: 60_000, limit: 30 },
   })
   @ApiOperation({
     summary: 'Refresh access token',
